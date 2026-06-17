@@ -323,6 +323,10 @@
   /* ===== MODAL ===== */
   .adm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
   .adm-overlay.open{display:flex}
+  /* ===== DÉTAIL ATHLÈTE ===== */
+  .det-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px}
+  .det-label{font-size:11.5px;font-weight:600;color:#8a93a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .det-val{font-size:15px;font-weight:700;color:#fff}
   .adm-modal{background:#0e1426;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 30px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:mIn .22s ease}
   @keyframes mIn{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
   .adm-modal h2{font-size:17px;font-weight:700;margin-bottom:4px;color:#fff;font-family:"Space Grotesk",sans-serif}
@@ -349,6 +353,138 @@
   /* toast */
   .toast{position:fixed;bottom:28px;right:28px;background:#0e1426;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 18px;color:#fff;font-size:13.5px;font-weight:500;box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:2000;transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none}
   .toast.show{transform:translateY(0);opacity:1}
+
+  /* ===== RESPONSIVE MOBILE ===== */
+
+  /* ---- Hamburger button (mobile only) ---- */
+  #mob-menu-toggle{
+    display:none;
+    position:fixed;top:12px;left:12px;z-index:900;
+    background:rgba(14,20,38,.92);border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;padding:10px 12px;cursor:pointer;
+    color:#cfd6e6;align-items:center;justify-content:center;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);
+  }
+  /* Mobile sidebar drawer */
+  #screen-admin .sidebar.mob-open{
+    display:flex !important;
+    position:fixed;top:0;left:0;height:100vh;z-index:850;
+    width:260px;box-shadow:8px 0 40px rgba(0,0,0,.6);
+  }
+  /* Overlay behind drawer */
+  #mob-sidebar-overlay{
+    display:none;
+    position:fixed;inset:0;z-index:840;background:rgba(0,0,0,.55);
+  }
+  #mob-sidebar-overlay.open{display:block}
+
+  /* ==============================
+     768px — tablette/mobile
+  ============================== */
+  @media (max-width:768px){
+    /* Admin layout : pleine largeur */
+    #screen-admin.active{display:grid;grid-template-columns:1fr}
+    #screen-admin .sidebar{display:none}
+    #screen-admin .main{padding:20px 14px 80px}
+
+    /* Hamburger visible */
+    #mob-menu-toggle{display:flex}
+
+    /* KPIs : 2 colonnes sur tablette */
+    #screen-admin .kpis{grid-template-columns:1fr 1fr}
+
+    /* Topbar : empiler titre + actions */
+    #screen-admin .topbar{flex-direction:column;align-items:flex-start;padding-top:44px}
+
+    /* Top-actions : empiler les boutons verticalement */
+    #screen-admin .top-actions{flex-direction:column;align-items:stretch;width:100%}
+    #screen-admin .top-actions .btn{justify-content:center}
+
+    /* Charts : 1 colonne */
+    #screen-admin .charts{grid-template-columns:1fr}
+    #screen-admin .bottom{grid-template-columns:1fr}
+
+    /* Gauge : réduire */
+    #screen-admin .gauge svg{max-width:220px}
+    #screen-admin .gauge .center{margin-top:-70px;margin-bottom:20px}
+
+    /* Chart boxes : éviter débordement */
+    #screen-admin .chart-box{overflow:hidden}
+
+    /* Modal : plein écran sur mobile */
+    .adm-overlay{padding:12px}
+    .adm-modal{padding:22px 18px}
+
+    /* Toast : adapter position */
+    .toast{bottom:16px;right:16px;left:16px;text-align:center}
+  }
+
+  /* ==============================
+     640px — masquer colonnes table secondaires
+  ============================== */
+  @media (max-width:640px){
+    /* KPIs : 1 colonne */
+    #screen-admin .kpis{grid-template-columns:1fr}
+
+    /* Table athBody : masquer Sommeil (col 3) et Statut (col 7) */
+    #screen-admin table thead th:nth-child(3),
+    #screen-admin table tbody td:nth-child(3),
+    #screen-admin table thead th:nth-child(7),
+    #screen-admin table tbody td:nth-child(7){display:none}
+
+    /* Table membres : masquer Email (col 3) */
+    #view-athletes table thead th:nth-child(3),
+    #view-athletes table tbody td:nth-child(3){display:none}
+
+    /* Table champ : masquer Blessure (col 4) */
+    #view-champ table thead th:nth-child(4),
+    #view-champ table tbody td:nth-child(4){display:none}
+
+    /* Table présences : masquer Jeu+Ven (col 5,6) */
+    #view-presences table thead th:nth-child(5),
+    #view-presences table tbody td:nth-child(5),
+    #view-presences table thead th:nth-child(6),
+    #view-presences table tbody td:nth-child(6){display:none}
+
+    /* Cells : réduire padding */
+    #screen-admin thead th{padding:0 8px 10px;font-size:11.5px}
+    #screen-admin tbody td{padding:10px 8px}
+  }
+
+  /* ==============================
+     480px — ajustements fins
+  ============================== */
+  @media (max-width:480px){
+    /* Questions wizard */
+    #screen-questions{padding:16px}
+    #screen-questions .wizard{padding:22px 16px 20px;border-radius:18px}
+    #screen-questions .q-title{font-size:18px}
+    #screen-questions .options.cols-4{grid-template-columns:1fr 1fr}
+    #screen-questions .options.cols-2{grid-template-columns:1fr 1fr}
+
+    /* Login */
+    #screen-login .card{padding:26px 18px 22px}
+    #screen-login .title{font-size:24px}
+
+    /* Welcome — bouton ENTER tactile */
+    #screen-welcome .enter-btn{
+      width:clamp(120px,40vw,180px);
+      height:clamp(48px,10vw,64px);
+      min-height:56px;
+      font-size:clamp(14px,4vw,20px);
+    }
+  }
+
+  /* ==============================
+     400px — très petit écran
+  ============================== */
+  @media (max-width:400px){
+    #screen-questions .wizard{padding:18px 12px 16px}
+    #screen-questions .options.cols-4{grid-template-columns:1fr 1fr}
+    #screen-questions .opt{padding:12px 8px;font-size:13px}
+    #screen-questions .opt .big{font-size:20px}
+    #screen-admin .kpis{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -524,6 +660,11 @@
 
 <!-- ============ 4) ADMIN ============ -->
 <section id="screen-admin" class="screen">
+  <!-- Hamburger mobile -->
+  <button id="mob-menu-toggle" type="button" aria-label="Menu" onclick="mobToggleSidebar()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div id="mob-sidebar-overlay" onclick="mobCloseSidebar()"></div>
   <aside class="sidebar">
     <div class="brand">
       <div class="left"><div class="logo-mark">AC</div><span class="brand-name">A.C.N.S</span></div>
@@ -759,6 +900,53 @@
     </div>
   </div>
 
+  <!-- ===== MODAL : DÉTAIL ATHLÈTE ===== -->
+  <div class="adm-overlay" id="modal-athlete-detail" onclick="if(event.target===this)closeModal('athlete-detail')">
+    <div class="adm-modal" style="max-width:520px;max-height:88vh;overflow-y:auto" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <div id="detail-avatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#ec4899);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0"></div>
+        <div>
+          <div id="detail-name" style="font-size:17px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif"></div>
+          <div id="detail-meta" style="font-size:12px;color:#8a93a8;margin-top:2px"></div>
+        </div>
+        <button onclick="closeModal('athlete-detail')" style="margin-left:auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#8a93a8;font-size:18px;width:34px;height:34px;cursor:pointer;flex-shrink:0">✕</button>
+      </div>
+      <div id="detail-no-report" style="display:none;text-align:center;padding:32px 0;color:#8a93a8;font-size:14px">
+        📋 Aucun rapport soumis cette semaine
+      </div>
+      <div id="detail-report">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="det-card"><div class="det-label">😴 Sommeil</div><div class="det-val" id="det-sleep"></div></div>
+          <div class="det-card"><div class="det-label">🩹 Blessure</div><div class="det-val" id="det-inj"></div></div>
+          <div class="det-card"><div class="det-label">💪 Ressenti</div><div class="det-val" id="det-feel"></div></div>
+          <div class="det-card"><div class="det-label">🔥 Motivation</div><div class="det-val" id="det-motiv"></div></div>
+        </div>
+        <div id="det-inj-desc-wrap" style="display:none;margin-bottom:12px">
+          <div class="det-card" style="border-color:rgba(248,113,113,.3)">
+            <div class="det-label" style="color:#f87171">📍 Description blessure</div>
+            <div class="det-val" id="det-inj-desc" style="font-size:13px;font-weight:400;color:#cfd6e6;line-height:1.5"></div>
+          </div>
+        </div>
+        <div id="det-impr-wrap" style="display:none;margin-bottom:12px">
+          <div class="det-card" style="border-color:rgba(34,211,238,.3)">
+            <div class="det-label" style="color:#22d3ee">📈 Points à améliorer</div>
+            <div class="det-val" id="det-impr" style="font-size:13px;font-weight:400;color:#cfd6e6;line-height:1.5"></div>
+          </div>
+        </div>
+        <div id="det-notes-wrap" style="display:none;margin-bottom:12px">
+          <div class="det-card" style="border-color:rgba(168,85,247,.3)">
+            <div class="det-label" style="color:#a855f7">💬 Message au coach</div>
+            <div class="det-val" id="det-notes" style="font-size:13px;font-weight:400;color:#cfd6e6;line-height:1.5"></div>
+          </div>
+        </div>
+        <div class="det-card" style="text-align:center;padding:14px">
+          <div class="det-label">🏅 Score de préparation</div>
+          <div id="det-score" style="font-size:28px;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- TOAST -->
@@ -766,6 +954,18 @@
 
 <script>
 /* ===================== ROUTER ===================== */
+/* ---- Mobile sidebar handlers ---- */
+function mobToggleSidebar(){
+  const sb=document.querySelector('#screen-admin .sidebar');
+  const ov=document.getElementById('mob-sidebar-overlay');
+  sb.classList.toggle('mob-open');
+  ov.classList.toggle('open');
+}
+function mobCloseSidebar(){
+  document.querySelector('#screen-admin .sidebar').classList.remove('mob-open');
+  document.getElementById('mob-sidebar-overlay').classList.remove('open');
+}
+
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
@@ -1044,7 +1244,7 @@ async function loadAdminData(){
   if(DB.championship){
     const [{data:ca},{data:reports}]=await Promise.all([
       _SB.from('championship_athletes').select('id,member_id,qualified').eq('championship_id',DB.championship.id),
-      _SB.from('weekly_reports').select('member_id,week_number,has_injury,training_feeling,sleep_duration,submitted_at').eq('championship_id',DB.championship.id).order('submitted_at',{ascending:false})
+      _SB.from('weekly_reports').select('member_id,week_number,has_injury,injury_description,training_feeling,sleep_time,sleep_duration,wants_improvement,improvement_description,motivation_level,athlete_notes,submitted_at').eq('championship_id',DB.championship.id).order('submitted_at',{ascending:false})
     ]);
     DB.champAthletes=ca||[];
     DB.reports=reports||[];
@@ -1054,6 +1254,7 @@ async function loadAdminData(){
 /* ===== NAVIGATION ADMIN ===== */
 const navViews=['dash','athletes','champ','presences'];
 function adminNav(view){
+  mobCloseSidebar();
   document.querySelectorAll('#screen-admin .admin-view').forEach(v=>v.classList.remove('active'));
   const el=document.getElementById('view-'+view);
   if(el) el.classList.add('active');
@@ -1412,9 +1613,9 @@ async function initAdmin(){
     if(rep){const sl=rep.sleep_duration<=4?0:rep.sleep_duration<=6?10:rep.sleep_duration<=8?25:30;scoreVal=Math.max(0,Math.min(100,sl+(rep.has_injury?5:30)+(rep.training_feeling-1)*10));}
     const st2=scoreVal!==null?statusOf(scoreVal):null;
     const prepCell=scoreVal!==null?`<div class="prep"><span class="bar"><i style="width:${scoreVal}%;background:${st2.bar}"></i></span><b>${scoreVal}%</b></div>`:'<div class="prep"><b style="color:#8a93a8">—</b></div>';
-    const injCell=rep?(rep.has_injury?'<span style="color:#f87171;font-size:12px">⚠ Blessure</span>':'<span style="color:#4ade80;font-size:12px">✓ OK</span>'):'<span style="color:#8a93a8">—</span>';
-    const weekCell=rep?`<span style="color:#8a93a8;font-size:12px">S${rep.week_number}</span>`:'<span style="color:#8a93a8">—</span>';
-    return '<tr><td><div class="ath">'+avHtml(m.name,i)+'<b>'+m.name+'</b></div></td><td><span class="tag">'+(m.branch||'—')+'</span></td><td>'+injCell+'</td><td>'+weekCell+'</td><td>'+accBadge+'</td><td>'+prepCell+'</td><td><span class="status" style="color:'+st.c+';background:'+st.bg+'"><i class="dot" style="background:'+st.c+'"></i>'+st.t+'</span></td></tr>';
+    const sleepCell=rep?`<span style="color:#cfd6e6;font-size:12px">😴 ${rep.sleep_time}</span>`:'<span style="color:#8a93a8">—</span>';
+    const injCell=rep?(rep.has_injury?'<span style="color:#f87171;font-size:12px">⚠ Oui</span>':'<span style="color:#4ade80;font-size:12px">✓ Non</span>'):'<span style="color:#8a93a8">—</span>';
+    return `<tr onclick="openAthleteDetail('${m.id}')" style="cursor:pointer"><td><div class="ath">${avHtml(m.name,i)}<b>${m.name}</b></div></td><td><span class="tag">${m.branch||'—'}</span></td><td>${sleepCell}</td><td>${injCell}</td><td>${accBadge}</td><td>${prepCell}</td><td><span class="status" style="color:${st.c};background:${st.bg}"><i class="dot" style="background:${st.c}"></i>${st.t}</span></td></tr>`;
   }).join("");
 
   document.getElementById("leaderboard").innerHTML=DB.champAthletes.slice(0,5).map((ca,i)=>{
@@ -1450,6 +1651,56 @@ async function initAdmin(){
   }
 }
 
+function openAthleteDetail(memberId){
+  const m=DB.members.find(x=>x.id===memberId);
+  const rep=DB.reports.find(r=>r.member_id===memberId);
+  if(!m)return;
+  // Header
+  const initials=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('detail-avatar').textContent=initials;
+  document.getElementById('detail-name').textContent=m.name;
+  document.getElementById('detail-meta').textContent=(m.branch||'—')+' · '+(rep?`Semaine ${rep.week_number}`:'Aucun rapport');
+  // No report
+  const noRep=document.getElementById('detail-no-report');
+  const repDiv=document.getElementById('detail-report');
+  if(!rep){noRep.style.display='block';repDiv.style.display='none';}
+  else{
+    noRep.style.display='none';repDiv.style.display='block';
+    // Sleep
+    document.getElementById('det-sleep').textContent=rep.sleep_time||'—';
+    // Injury
+    const injEl=document.getElementById('det-inj');
+    const injDesc=document.getElementById('det-inj-desc-wrap');
+    if(rep.has_injury){
+      injEl.innerHTML='<span style="color:#f87171;font-weight:700">⚠ Oui</span>';
+      if(rep.injury_description){document.getElementById('det-inj-desc').textContent=rep.injury_description;injDesc.style.display='block';}
+      else injDesc.style.display='none';
+    }else{injEl.innerHTML='<span style="color:#4ade80;font-weight:700">✓ Non</span>';injDesc.style.display='none';}
+    // Feeling (1-5)
+    const feelLabels={1:'😵 Épuisé',2:'😓 Fatigué',3:'😐 Correct',4:'🙂 Bien',5:'🔥 En forme'};
+    document.getElementById('det-feel').textContent=feelLabels[rep.training_feeling]||`${rep.training_feeling}/5`;
+    // Motivation
+    const motivLabels={1:'😞 Très faible',2:'😕 Faible',3:'😐 Moyen',4:'😊 Bon',5:'🚀 Excellent'};
+    document.getElementById('det-motiv').textContent=motivLabels[rep.motivation_level]||`${rep.motivation_level}/5`;
+    // Improvement
+    const imprWrap=document.getElementById('det-impr-wrap');
+    if(rep.wants_improvement&&rep.improvement_description){
+      document.getElementById('det-impr').textContent=rep.improvement_description;
+      imprWrap.style.display='block';
+    }else imprWrap.style.display='none';
+    // Notes
+    const notesWrap=document.getElementById('det-notes-wrap');
+    if(rep.athlete_notes){document.getElementById('det-notes').textContent=rep.athlete_notes;notesWrap.style.display='block';}
+    else notesWrap.style.display='none';
+    // Score
+    const sl=rep.sleep_duration<=4?0:rep.sleep_duration<=6?10:rep.sleep_duration<=8?25:30;
+    const scoreVal=Math.max(0,Math.min(100,sl+(rep.has_injury?5:30)+(rep.training_feeling-1)*10));
+    const st=statusOf(scoreVal);
+    document.getElementById('det-score').innerHTML=`<span style="color:${st.bar}">${scoreVal}%</span> <span style="font-size:13px;font-weight:500;color:#8a93a8">${st.t}</span>`;
+  }
+  document.getElementById('modal-athlete-detail').classList.add('open');
+}
+
 async function refreshAdmin(){
   const btn=document.getElementById('refreshAdminBtn');
   if(btn){btn.textContent='↻ Chargement...';btn.disabled=true;}
@@ -1471,12 +1722,9 @@ async function refreshAdmin(){
     if(rep){const sl=rep.sleep_duration<=4?0:rep.sleep_duration<=6?10:rep.sleep_duration<=8?25:30;scoreVal=Math.max(0,Math.min(100,sl+(rep.has_injury?5:30)+(rep.training_feeling-1)*10));}
     const st2=scoreVal!==null?statusOf(scoreVal):null;
     const prepCell=scoreVal!==null?`<div class="prep"><span class="bar"><i style="width:${scoreVal}%;background:${st2.bar}"></i></span><b>${scoreVal}%</b></div>`:'<div class="prep"><b style="color:#8a93a8">—</b></div>';
-    const injCell=rep?(rep.has_injury?'<span style="color:#f87171;font-size:12px">⚠ Blessure</span>':'<span style="color:#4ade80;font-size:12px">✓ OK</span>'):'<span style="color:#8a93a8">—</span>';
-    const weekCell=rep?`<span style="color:#8a93a8;font-size:12px">S${rep.week_number}</span>`:'<span style="color:#8a93a8">—</span>';
-    const acctBtn=acc
-      ?`<button class="adm-ibtn" style="margin-right:4px" onclick="openModal('edit-account','${m.id}')" title="Modifier email/mot de passe">✏</button><button class="adm-ibtn" onclick="toggleMember('${m.id}',${acc.is_active},'${acc.id}')">${acc.is_active?'Suspendre':'Réactiver'}</button>`
-      :`<button class="adm-ibtn" onclick="openModal('create-account','${m.id}')">+ Compte</button>`;
-    return '<tr><td><div class="ath">'+avHtml(m.name,i)+'<b>'+m.name+'</b></div></td><td><span class="tag">'+(m.branch||'—')+'</span></td><td>'+injCell+'</td><td>'+weekCell+'</td><td>'+accBadge+'</td><td>'+prepCell+'</td><td><span class="status" style="color:'+st.c+';background:'+st.bg+'"><i class="dot" style="background:'+st.c+'"></i>'+st.t+'</span></td></tr>';
+    const sleepCell=rep?`<span style="color:#cfd6e6;font-size:12px">😴 ${rep.sleep_time}</span>`:'<span style="color:#8a93a8">—</span>';
+    const injCell=rep?(rep.has_injury?'<span style="color:#f87171;font-size:12px">⚠ Oui</span>':'<span style="color:#4ade80;font-size:12px">✓ Non</span>'):'<span style="color:#8a93a8">—</span>';
+    return `<tr onclick="openAthleteDetail('${m.id}')" style="cursor:pointer"><td><div class="ath">${avHtml(m.name,i)}<b>${m.name}</b></div></td><td><span class="tag">${m.branch||'—'}</span></td><td>${sleepCell}</td><td>${injCell}</td><td>${accBadge}</td><td>${prepCell}</td><td><span class="status" style="color:${st.c};background:${st.bg}"><i class="dot" style="background:${st.c}"></i>${st.t}</span></td></tr>`;
   }).join("");
   renderPresences();
   if(btn){btn.textContent='↻ Rafraîchir';btn.disabled=false;}
