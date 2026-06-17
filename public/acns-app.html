@@ -349,6 +349,138 @@
   /* toast */
   .toast{position:fixed;bottom:28px;right:28px;background:#0e1426;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 18px;color:#fff;font-size:13.5px;font-weight:500;box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:2000;transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none}
   .toast.show{transform:translateY(0);opacity:1}
+
+  /* ===== RESPONSIVE MOBILE ===== */
+
+  /* ---- Hamburger button (mobile only) ---- */
+  #mob-menu-toggle{
+    display:none;
+    position:fixed;top:12px;left:12px;z-index:900;
+    background:rgba(14,20,38,.92);border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;padding:10px 12px;cursor:pointer;
+    color:#cfd6e6;align-items:center;justify-content:center;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);
+  }
+  /* Mobile sidebar drawer */
+  #screen-admin .sidebar.mob-open{
+    display:flex !important;
+    position:fixed;top:0;left:0;height:100vh;z-index:850;
+    width:260px;box-shadow:8px 0 40px rgba(0,0,0,.6);
+  }
+  /* Overlay behind drawer */
+  #mob-sidebar-overlay{
+    display:none;
+    position:fixed;inset:0;z-index:840;background:rgba(0,0,0,.55);
+  }
+  #mob-sidebar-overlay.open{display:block}
+
+  /* ==============================
+     768px — tablette/mobile
+  ============================== */
+  @media (max-width:768px){
+    /* Admin layout : pleine largeur */
+    #screen-admin.active{display:grid;grid-template-columns:1fr}
+    #screen-admin .sidebar{display:none}
+    #screen-admin .main{padding:20px 14px 80px}
+
+    /* Hamburger visible */
+    #mob-menu-toggle{display:flex}
+
+    /* KPIs : 2 colonnes sur tablette */
+    #screen-admin .kpis{grid-template-columns:1fr 1fr}
+
+    /* Topbar : empiler titre + actions */
+    #screen-admin .topbar{flex-direction:column;align-items:flex-start;padding-top:44px}
+
+    /* Top-actions : empiler les boutons verticalement */
+    #screen-admin .top-actions{flex-direction:column;align-items:stretch;width:100%}
+    #screen-admin .top-actions .btn{justify-content:center}
+
+    /* Charts : 1 colonne */
+    #screen-admin .charts{grid-template-columns:1fr}
+    #screen-admin .bottom{grid-template-columns:1fr}
+
+    /* Gauge : réduire */
+    #screen-admin .gauge svg{max-width:220px}
+    #screen-admin .gauge .center{margin-top:-70px;margin-bottom:20px}
+
+    /* Chart boxes : éviter débordement */
+    #screen-admin .chart-box{overflow:hidden}
+
+    /* Modal : plein écran sur mobile */
+    .adm-overlay{padding:12px}
+    .adm-modal{padding:22px 18px}
+
+    /* Toast : adapter position */
+    .toast{bottom:16px;right:16px;left:16px;text-align:center}
+  }
+
+  /* ==============================
+     640px — masquer colonnes table secondaires
+  ============================== */
+  @media (max-width:640px){
+    /* KPIs : 1 colonne */
+    #screen-admin .kpis{grid-template-columns:1fr}
+
+    /* Table athBody : masquer Sommeil (col 3) et Statut (col 7) */
+    #screen-admin table thead th:nth-child(3),
+    #screen-admin table tbody td:nth-child(3),
+    #screen-admin table thead th:nth-child(7),
+    #screen-admin table tbody td:nth-child(7){display:none}
+
+    /* Table membres : masquer Email (col 3) */
+    #view-athletes table thead th:nth-child(3),
+    #view-athletes table tbody td:nth-child(3){display:none}
+
+    /* Table champ : masquer Blessure (col 4) */
+    #view-champ table thead th:nth-child(4),
+    #view-champ table tbody td:nth-child(4){display:none}
+
+    /* Table présences : masquer Jeu+Ven (col 5,6) */
+    #view-presences table thead th:nth-child(5),
+    #view-presences table tbody td:nth-child(5),
+    #view-presences table thead th:nth-child(6),
+    #view-presences table tbody td:nth-child(6){display:none}
+
+    /* Cells : réduire padding */
+    #screen-admin thead th{padding:0 8px 10px;font-size:11.5px}
+    #screen-admin tbody td{padding:10px 8px}
+  }
+
+  /* ==============================
+     480px — ajustements fins
+  ============================== */
+  @media (max-width:480px){
+    /* Questions wizard */
+    #screen-questions{padding:16px}
+    #screen-questions .wizard{padding:22px 16px 20px;border-radius:18px}
+    #screen-questions .q-title{font-size:18px}
+    #screen-questions .options.cols-4{grid-template-columns:1fr 1fr}
+    #screen-questions .options.cols-2{grid-template-columns:1fr 1fr}
+
+    /* Login */
+    #screen-login .card{padding:26px 18px 22px}
+    #screen-login .title{font-size:24px}
+
+    /* Welcome — bouton ENTER tactile */
+    #screen-welcome .enter-btn{
+      width:clamp(120px,40vw,180px);
+      height:clamp(48px,10vw,64px);
+      min-height:56px;
+      font-size:clamp(14px,4vw,20px);
+    }
+  }
+
+  /* ==============================
+     400px — très petit écran
+  ============================== */
+  @media (max-width:400px){
+    #screen-questions .wizard{padding:18px 12px 16px}
+    #screen-questions .options.cols-4{grid-template-columns:1fr 1fr}
+    #screen-questions .opt{padding:12px 8px;font-size:13px}
+    #screen-questions .opt .big{font-size:20px}
+    #screen-admin .kpis{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -524,6 +656,11 @@
 
 <!-- ============ 4) ADMIN ============ -->
 <section id="screen-admin" class="screen">
+  <!-- Hamburger mobile -->
+  <button id="mob-menu-toggle" type="button" aria-label="Menu" onclick="mobToggleSidebar()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div id="mob-sidebar-overlay" onclick="mobCloseSidebar()"></div>
   <aside class="sidebar">
     <div class="brand">
       <div class="left"><div class="logo-mark">AC</div><span class="brand-name">A.C.N.S</span></div>
@@ -766,6 +903,18 @@
 
 <script>
 /* ===================== ROUTER ===================== */
+/* ---- Mobile sidebar handlers ---- */
+function mobToggleSidebar(){
+  const sb=document.querySelector('#screen-admin .sidebar');
+  const ov=document.getElementById('mob-sidebar-overlay');
+  sb.classList.toggle('mob-open');
+  ov.classList.toggle('open');
+}
+function mobCloseSidebar(){
+  document.querySelector('#screen-admin .sidebar').classList.remove('mob-open');
+  document.getElementById('mob-sidebar-overlay').classList.remove('open');
+}
+
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
@@ -1054,6 +1203,7 @@ async function loadAdminData(){
 /* ===== NAVIGATION ADMIN ===== */
 const navViews=['dash','athletes','champ','presences'];
 function adminNav(view){
+  mobCloseSidebar();
   document.querySelectorAll('#screen-admin .admin-view').forEach(v=>v.classList.remove('active'));
   const el=document.getElementById('view-'+view);
   if(el) el.classList.add('active');
