@@ -944,15 +944,24 @@ function togglePassword(btn){
     const btn=document.getElementById('finishBtn');
     btn.textContent='Envoi...';btn.disabled=true;
     try{
-      if(currentAthleteInfo?.member){
+      console.log('[ACNS] finishBtn clicked — currentAthleteInfo:', JSON.stringify(currentAthleteInfo));
+      console.log('[ACNS] answers:', JSON.stringify(answers));
+      if(!currentAthleteInfo?.member){
+        console.error('[ACNS] ABORT: currentAthleteInfo.member est null');
+        alert('Erreur : membre non identifié.\nReconnecte-toi et réessaie.');
+      } else {
         const now=new Date();
         const wkNum=Math.ceil((((now-new Date(now.getFullYear(),0,1))/86400000)+new Date(now.getFullYear(),0,1).getDay()+1)/7);
-        const {data:champData}=await _SB.from('championships').select('id').order('date',{ascending:false}).limit(1).single();
-        if(champData){
+        console.log('[ACNS] member_id:', currentAthleteInfo.member.id, '| semaine:', wkNum);
+        const {data:champData,error:champErr}=await _SB.from('championships').select('id').order('date',{ascending:false}).limit(1).single();
+        console.log('[ACNS] championship_id:', champData?.id, '| erreur champ:', champErr?.message);
+        if(!champData){
+          alert('Erreur : aucun championnat trouvé.\n'+(champErr?.message||'Vérifie la table championships.'));
+        } else {
           const slMap={0:{t:'moins de 5h',d:4},10:{t:'5-6h',d:6},25:{t:'7-8h',d:8},30:{t:'plus de 8h',d:9}};
-          const sl=slMap[answers.sleep]||{t:'N/A',d:6};
+          const sl=slMap[answers.sleep]||{t:'7-8h',d:8};
           const fScale=v=>Math.max(1,Math.min(5,Math.round(v/10)+1));
-          const {error}=await _SB.from('weekly_reports').upsert({
+          const payload={
             championship_id:champData.id,
             member_id:currentAthleteInfo.member.id,
             week_number:wkNum,
@@ -966,12 +975,21 @@ function togglePassword(btn){
             nutrition_ok:true,
             motivation_level:fScale(answers.feeling??0),
             athlete_notes:answers.message||null,
-          },{onConflict:'championship_id,member_id,week_number'});
-          if(error){console.error('Rapport non sauvegardé:',error.message,error.code);alert('Erreur lors de la sauvegarde du rapport :\n'+error.message+'\n(code: '+error.code+')\nContacte ton coach.');}
-          else console.log('Rapport semaine '+wkNum+' sauvegardé.');
+          };
+          console.log('[ACNS] payload:', JSON.stringify(payload));
+          const {error}=await _SB.from('weekly_reports').upsert(payload,{onConflict:'championship_id,member_id,week_number'});
+          if(error){
+            console.error('[ACNS] UPSERT FAILED:', error.message, '| code:', error.code, '| details:', error.details, '| hint:', error.hint);
+            alert('Erreur sauvegarde rapport :\n'+error.message+'\ncode: '+error.code+'\n'+( error.hint||''));
+          } else {
+            console.log('[ACNS] Rapport semaine '+wkNum+' sauvegardé avec succès.');
+          }
         }
       }
-    }catch(e){console.error('Erreur rapport:',e);}
+    }catch(e){
+      console.error('[ACNS] Exception dans finishBtn:',e);
+      alert('Exception inattendue : '+e.message);
+    }
     await _SB.auth.signOut();
     currentUser=null;currentAthleteInfo=null;
     showScreen('login');
