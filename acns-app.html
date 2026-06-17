@@ -557,6 +557,7 @@
     <div class="topbar">
       <div><h1>Bonjour Coach 👋</h1><p>Vue globale de la préparation de tes athlètes au championnat.</p></div>
       <div class="top-actions">
+        <button id="refreshAdminBtn" class="btn btn-ghost" onclick="refreshAdmin()">↻ Rafraîchir</button>
         <button class="btn btn-ghost" onclick="exportCSV()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exporter</button>
         <button class="btn btn-grad" onclick="openModal('new-bilan',null)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nouveau bilan</button>
       </div>
@@ -790,10 +791,11 @@ async function _markPresence(){
   if(!currentAthleteInfo?.member)return;
   const today=new Date();
   const dateStr=today.toISOString().split('T')[0];
-  await _SB.from('presence').insert({
+  const {error}=await _SB.from('presence').upsert({
     member_id:currentAthleteInfo.member.id,
     presence_date:dateStr
-  }).select().single(); // ignore UNIQUE conflict error (already present)
+  },{onConflict:'member_id,presence_date',ignoreDuplicates:true});
+  if(error)console.error('Presence insert error:',error.message,error.code);
   // Show banner
   const banner=document.getElementById('presence-banner');
   const txt=document.getElementById('presence-banner-text');
@@ -938,8 +940,40 @@ function togglePassword(btn){
     document.getElementById('injuryDetailWrap').classList.remove('show');
     step=1;render();
   });
-  document.getElementById('finishBtn').addEventListener('click',()=>{
-    // UI démo : retour au login (simule l'envoi + déconnexion)
+  document.getElementById('finishBtn').addEventListener('click',async()=>{
+    const btn=document.getElementById('finishBtn');
+    btn.textContent='Envoi...';btn.disabled=true;
+    try{
+      if(currentAthleteInfo?.member){
+        const now=new Date();
+        const wkNum=Math.ceil((((now-new Date(now.getFullYear(),0,1))/86400000)+new Date(now.getFullYear(),0,1).getDay()+1)/7);
+        const {data:champData}=await _SB.from('championships').select('id').order('date',{ascending:false}).limit(1).single();
+        if(champData){
+          const slMap={0:{t:'moins de 5h',d:4},10:{t:'5-6h',d:6},25:{t:'7-8h',d:8},30:{t:'plus de 8h',d:9}};
+          const sl=slMap[answers.sleep]||{t:'N/A',d:6};
+          const fScale=v=>Math.max(1,Math.min(5,Math.round(v/10)+1));
+          const {error}=await _SB.from('weekly_reports').upsert({
+            championship_id:champData.id,
+            member_id:currentAthleteInfo.member.id,
+            week_number:wkNum,
+            has_injury:answers.injury===5,
+            injury_description:answers.injuryDetail||null,
+            training_feeling:fScale(answers.feeling??0),
+            sleep_time:sl.t,
+            sleep_duration:sl.d,
+            wants_improvement:(answers.needs||[]).length>0,
+            improvement_description:(answers.needs||[]).join(', ')||null,
+            nutrition_ok:true,
+            motivation_level:fScale(answers.feeling??0),
+            athlete_notes:answers.message||null,
+          },{onConflict:'championship_id,member_id,week_number'});
+          if(error){console.error('Rapport non sauvegardé:',error.message,error.code);alert('Erreur lors de la sauvegarde du rapport :\n'+error.message+'\n(code: '+error.code+')\nContacte ton coach.');}
+          else console.log('Rapport semaine '+wkNum+' sauvegardé.');
+        }
+      }
+    }catch(e){console.error('Erreur rapport:',e);}
+    await _SB.auth.signOut();
+    currentUser=null;currentAthleteInfo=null;
     showScreen('login');
   });
 
@@ -969,7 +1003,7 @@ function togglePassword(btn){
 })();
 
 /* ===================== 4) ADMIN ===================== */
-let DB={members:[],accounts:[],champAthletes:[],championship:null};
+let DB={members:[],accounts:[],champAthletes:[],championship:null,presences:[],reports:[]};
 const months=["Jan","Fév","Mar","Avr","Mai","Jun","Jui","Aoû","Sep","Oct","Nov","Déc"];
 const prepTrend=[52,55,58,57,61,64,63,68,70,72,71,74];
 const presenceTrend=[60,62,59,65,66,70,72,71,75,77,76,80];
@@ -990,8 +1024,12 @@ async function loadAdminData(){
   DB.accounts=accounts||[];
   DB.presences=presences||[];
   if(DB.championship){
-    const {data:ca}=await _SB.from('championship_athletes').select('id,member_id,qualified').eq('championship_id',DB.championship.id);
+    const [{data:ca},{data:reports}]=await Promise.all([
+      _SB.from('championship_athletes').select('id,member_id,qualified').eq('championship_id',DB.championship.id),
+      _SB.from('weekly_reports').select('member_id,week_number,has_injury,training_feeling,sleep_duration,submitted_at').eq('championship_id',DB.championship.id).order('submitted_at',{ascending:false})
+    ]);
     DB.champAthletes=ca||[];
+    DB.reports=reports||[];
   }
 }
 
@@ -1014,9 +1052,9 @@ function adminNav(view){
   const sub=document.querySelector('#screen-admin .nav-sub');
   if(sub) sub.style.display=view==='dash'?'':'none';
 
-  if(view==='athletes') renderMembers();
+  if(view==='athletes'){loadAdminData().then(()=>renderMembers());}
   if(view==='champ')    renderChamp();
-  if(view==='presences') renderPresences();
+  if(view==='presences'){loadAdminData().then(()=>renderPresences());}
   if(view==='settings'){/* nothing extra */}
 }
 
@@ -1349,9 +1387,16 @@ async function initAdmin(){
   document.getElementById("athBody").innerHTML=DB.members.map((m,i)=>{
     const inChamp=DB.champAthletes.some(a=>a.member_id===m.id);
     const acc=DB.accounts.find(a=>a.member_id===m.id);
+    const rep=DB.reports.find(r=>r.member_id===m.id);
     const st=inChamp?{t:'Sélectionné',c:'#4ade80',bg:'rgba(34,197,94,.14)'}:{t:'Non sélectionné',c:'#8a93a8',bg:'rgba(138,147,168,.1)'};
     const accBadge=acc?(acc.is_active?'<span class="inj"><i class="dot" style="background:#4ade80"></i>Actif</span>':'<span class="inj"><i class="dot" style="background:#fbbf24"></i>Suspendu</span>'):'<span style="color:#8a93a8">Aucun</span>';
-    return '<tr><td><div class="ath">'+avHtml(m.name,i)+'<b>'+m.name+'</b></div></td><td><span class="tag">'+(m.branch||'—')+'</span></td><td>—</td><td>—</td><td>'+accBadge+'</td><td><div class="prep"><span class="bar"><i style="width:0%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></span><b>—</b></div></td><td><span class="status" style="color:'+st.c+';background:'+st.bg+'"><i class="dot" style="background:'+st.c+'"></i>'+st.t+'</span></td></tr>';
+    let scoreVal=null;
+    if(rep){const sl=rep.sleep_duration<=4?0:rep.sleep_duration<=6?10:rep.sleep_duration<=8?25:30;scoreVal=Math.max(0,Math.min(100,sl+(rep.has_injury?5:30)+(rep.training_feeling-1)*10));}
+    const st2=scoreVal!==null?statusOf(scoreVal):null;
+    const prepCell=scoreVal!==null?`<div class="prep"><span class="bar"><i style="width:${scoreVal}%;background:${st2.bar}"></i></span><b>${scoreVal}%</b></div>`:'<div class="prep"><b style="color:#8a93a8">—</b></div>';
+    const injCell=rep?(rep.has_injury?'<span style="color:#f87171;font-size:12px">⚠ Blessure</span>':'<span style="color:#4ade80;font-size:12px">✓ OK</span>'):'<span style="color:#8a93a8">—</span>';
+    const weekCell=rep?`<span style="color:#8a93a8;font-size:12px">S${rep.week_number}</span>`:'<span style="color:#8a93a8">—</span>';
+    return '<tr><td><div class="ath">'+avHtml(m.name,i)+'<b>'+m.name+'</b></div></td><td><span class="tag">'+(m.branch||'—')+'</span></td><td>'+injCell+'</td><td>'+weekCell+'</td><td>'+accBadge+'</td><td>'+prepCell+'</td><td><span class="status" style="color:'+st.c+';background:'+st.bg+'"><i class="dot" style="background:'+st.c+'"></i>'+st.t+'</span></td></tr>';
   }).join("");
 
   document.getElementById("leaderboard").innerHTML=DB.champAthletes.slice(0,5).map((ca,i)=>{
@@ -1385,6 +1430,38 @@ async function initAdmin(){
     new Chart(s,{type:"doughnut",data:{labels:sLabels,datasets:[{data:sCounts,backgroundColor:sColors,borderColor:"#0e1426",borderWidth:3,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{display:false},tooltip:{backgroundColor:"#0e1426",callbacks:{label:c=>" "+c.label+" : "+c.parsed+" membre(s)"}}}}});
     document.getElementById("statusLegend").innerHTML=sLabels.map((l,i)=>'<div style="display:flex;align-items:center;gap:10px"><i class="dot" style="width:11px;height:11px;background:'+sColors[i]+'"></i><span style="flex:1;font-size:13.5px;color:#cfd6e6">'+l+'</span><b style="font-size:14px">'+sCounts[i]+'</b></div>').join("");
   }
+}
+
+async function refreshAdmin(){
+  const btn=document.getElementById('refreshAdminBtn');
+  if(btn){btn.textContent='↻ Chargement...';btn.disabled=true;}
+  await loadAdminData();
+  const total=DB.members.length,champCount=DB.champAthletes.length;
+  const activeAccounts=DB.accounts.filter(a=>a.is_active).length;
+  const inactiveAccounts=DB.accounts.filter(a=>!a.is_active).length;
+  document.getElementById("kTotal").textContent=total||'—';
+  document.getElementById("kReady").textContent=champCount||'0';
+  document.getElementById("kAvg").textContent=activeAccounts+'';
+  document.getElementById("kInj").textContent=inactiveAccounts;
+  document.getElementById("athBody").innerHTML=DB.members.map((m,i)=>{
+    const inChamp=DB.champAthletes.some(a=>a.member_id===m.id);
+    const acc=DB.accounts.find(a=>a.member_id===m.id);
+    const rep=DB.reports.find(r=>r.member_id===m.id);
+    const st=inChamp?{t:'Sélectionné',c:'#4ade80',bg:'rgba(34,197,94,.14)'}:{t:'Non sélectionné',c:'#8a93a8',bg:'rgba(138,147,168,.1)'};
+    const accBadge=acc?(acc.is_active?'<span class="inj"><i class="dot" style="background:#4ade80"></i>Actif</span>':'<span class="inj"><i class="dot" style="background:#fbbf24"></i>Suspendu</span>'):'<span style="color:#8a93a8">Aucun</span>';
+    let scoreVal=null;
+    if(rep){const sl=rep.sleep_duration<=4?0:rep.sleep_duration<=6?10:rep.sleep_duration<=8?25:30;scoreVal=Math.max(0,Math.min(100,sl+(rep.has_injury?5:30)+(rep.training_feeling-1)*10));}
+    const st2=scoreVal!==null?statusOf(scoreVal):null;
+    const prepCell=scoreVal!==null?`<div class="prep"><span class="bar"><i style="width:${scoreVal}%;background:${st2.bar}"></i></span><b>${scoreVal}%</b></div>`:'<div class="prep"><b style="color:#8a93a8">—</b></div>';
+    const injCell=rep?(rep.has_injury?'<span style="color:#f87171;font-size:12px">⚠ Blessure</span>':'<span style="color:#4ade80;font-size:12px">✓ OK</span>'):'<span style="color:#8a93a8">—</span>';
+    const weekCell=rep?`<span style="color:#8a93a8;font-size:12px">S${rep.week_number}</span>`:'<span style="color:#8a93a8">—</span>';
+    const acctBtn=acc
+      ?`<button class="adm-ibtn" style="margin-right:4px" onclick="openModal('edit-account','${m.id}')" title="Modifier email/mot de passe">✏</button><button class="adm-ibtn" onclick="toggleMember('${m.id}',${acc.is_active},'${acc.id}')">${acc.is_active?'Suspendre':'Réactiver'}</button>`
+      :`<button class="adm-ibtn" onclick="openModal('create-account','${m.id}')">+ Compte</button>`;
+    return '<tr><td><div class="ath">'+avHtml(m.name,i)+'<b>'+m.name+'</b></div></td><td><span class="tag">'+(m.branch||'—')+'</span></td><td>'+injCell+'</td><td>'+weekCell+'</td><td>'+accBadge+'</td><td>'+prepCell+'</td><td><span class="status" style="color:'+st.c+';background:'+st.bg+'"><i class="dot" style="background:'+st.c+'"></i>'+st.t+'</span></td></tr>';
+  }).join("");
+  renderPresences();
+  if(btn){btn.textContent='↻ Rafraîchir';btn.disabled=false;}
 }
 </script>
 </body>
